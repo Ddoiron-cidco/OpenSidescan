@@ -41,6 +41,9 @@ This file must be updated whenever a change is planned or completed.
 | 2026-02-19 | Planned | Build | Make Windows OpenCV detection resilient to MSVC toolset changes by auto-selecting available runtime folders (`vc17/vc16/vc15/vc14`) in CMake. |
 | 2026-02-19 | Done | Build | Updated Windows CMake configuration in `CMakeLists.txt`, `test/CMakeLists.txt`, and `test/win-fileLock-test/CMakeLists.txt` to set `OpenCV_RUNTIME` explicitly and locate OpenCV from `C:/LIBS/opencv/build` using runtime-folder auto-detection. |
 | 2026-02-19 | Done | Build | Replaced hardcoded Windows OpenCV DLL install path (`vc15/opencv_world454.dll`) with runtime-aware globbing of `opencv_world*.dll`. |
+| 2026-02-19 | Planned | CI | Ensure NSIS is installed on `windows-latest` before packaging so `cpack -G NSIS` is available in CI. |
+| 2026-02-19 | Done | CI | Added explicit Windows CI NSIS bootstrap step in `.github/workflows/ci.yml` (`choco install nsis`, `makensis` PATH export, and version check). |
+| 2026-02-19 | Done | Build | Hardened `Scripts/build_installer.bat` with idempotent build directory creation and explicit CMake/CPack error propagation using `pushd/popd` and `exit /b`. |
 
 ## Update Rule
 When a change starts, add a `Planned` entry.

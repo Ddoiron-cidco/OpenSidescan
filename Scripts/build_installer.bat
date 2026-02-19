@@ -1,6 +1,18 @@
-set version=%1
+@echo off
+setlocal
 
-mkdir build
-cd build
-cmake .. -DPROJECT_VERSION=%1
+set "version=%~1"
+if not exist build mkdir build
+
+pushd build || exit /b 1
+cmake .. -DPROJECT_VERSION=%version%
+if errorlevel 1 (
+    set "ERR=%ERRORLEVEL%"
+    popd
+    exit /b %ERR%
+)
+
 cpack -G NSIS
+set "ERR=%ERRORLEVEL%"
+popd
+exit /b %ERR%
