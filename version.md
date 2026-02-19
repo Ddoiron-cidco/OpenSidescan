@@ -35,6 +35,9 @@ This file must be updated whenever a change is planned or completed.
 | 2026-02-19 | Done | Build | Suppressed remaining third-party WMM unused-local warning at integration boundary (`C4101` / `-Wunused-variable`) around `wmm_calculations.cpp` include. |
 | 2026-02-19 | Done | Testing | Reduced `win-fileLock-test` warning noise by aligning MSVC suppression on `wincatchLockTest` and avoiding Catch macro redefinition (`C4005`) with a guarded `CATCH_CONFIG_NO_POSIX_SIGNALS` define. |
 | 2026-02-19 | Done | Testing | Fixed `Scripts/winlocktest.bat` to preserve working directory and return proper error codes (`pushd/popd` + explicit `exit /b`), preventing post-build path errors in CI. |
+| 2026-02-19 | Planned | CI | Re-pin Windows OpenCV dependency from `4.12.0` to `4.5.5` to restore historical unit-test behavior on `windows-latest`. |
+| 2026-02-19 | Done | CI | Re-pinned Windows CI OpenCV bootstrap/cache to `4.5.5` (`opencv-4.5.5-vc14_vc15.exe`) while keeping MSVC setup and runtime bin-path auto-detection. |
+| 2026-02-19 | Done | Testing | Hardened `Scripts/win-unittest.bat` with idempotent directory creation and explicit CMake/MSBuild error propagation using `pushd/popd` and `exit /b`. |
 
 ## Update Rule
 When a change starts, add a `Planned` entry.

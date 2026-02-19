@@ -111,7 +111,7 @@ jobs:
           path: |
             C:\LIBS\opencv\build
             C:\LIBS\eigen-3.4.0
-          key: windows-libs-opencv-4.12.0-eigen-3.4.0-v1
+          key: windows-libs-opencv-4.5.5-eigen-3.4.0-v1
 
       - name: Install Qt 5.15.2
         uses: jurplel/install-qt-action@v4
@@ -122,7 +122,7 @@ jobs:
           cache: "true"
           cache-key-prefix: "opensidescan-qt-5.15.2-msvc2019_64"
 
-      - name: Install OpenCV 4.12.0 and Eigen 3.4.0 (prebuilt)
+      - name: Install OpenCV 4.5.5 and Eigen 3.4.0 (prebuilt)
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -130,8 +130,8 @@ jobs:
 
           $opencvMarker = "C:\LIBS\opencv\build\OpenCVConfig.cmake"
           if (-not (Test-Path $opencvMarker)) {
-            $opencvInstaller = Join-Path $env:RUNNER_TEMP "opencv-4.12.0-windows.exe"
-            Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.12.0/opencv-4.12.0-windows.exe" -OutFile $opencvInstaller
+            $opencvInstaller = Join-Path $env:RUNNER_TEMP "opencv-4.5.5-vc14_vc15.exe"
+            Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.5.5/opencv-4.5.5-vc14_vc15.exe" -OutFile $opencvInstaller
             $opencvExtractDir = Join-Path $env:RUNNER_TEMP "opencv-extract"
             New-Item -ItemType Directory -Force -Path $opencvExtractDir | Out-Null
             Start-Process -FilePath $opencvInstaller -ArgumentList "-y", "-o$opencvExtractDir" -Wait
