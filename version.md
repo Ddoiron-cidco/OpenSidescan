@@ -38,6 +38,9 @@ This file must be updated whenever a change is planned or completed.
 | 2026-02-19 | Planned | CI | Re-pin Windows OpenCV dependency from `4.12.0` to `4.5.5` to restore historical unit-test behavior on `windows-latest`. |
 | 2026-02-19 | Done | CI | Re-pinned Windows CI OpenCV bootstrap/cache to `4.5.5` (`opencv-4.5.5-vc14_vc15.exe`) while keeping MSVC setup and runtime bin-path auto-detection. |
 | 2026-02-19 | Done | Testing | Hardened `Scripts/win-unittest.bat` with idempotent directory creation and explicit CMake/MSBuild error propagation using `pushd/popd` and `exit /b`. |
+| 2026-02-19 | Planned | Build | Make Windows OpenCV detection resilient to MSVC toolset changes by auto-selecting available runtime folders (`vc17/vc16/vc15/vc14`) in CMake. |
+| 2026-02-19 | Done | Build | Updated Windows CMake configuration in `CMakeLists.txt`, `test/CMakeLists.txt`, and `test/win-fileLock-test/CMakeLists.txt` to set `OpenCV_RUNTIME` explicitly and locate OpenCV from `C:/LIBS/opencv/build` using runtime-folder auto-detection. |
+| 2026-02-19 | Done | Build | Replaced hardcoded Windows OpenCV DLL install path (`vc15/opencv_world454.dll`) with runtime-aware globbing of `opencv_world*.dll`. |
 
 ## Update Rule
 When a change starts, add a `Planned` entry.
