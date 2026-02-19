@@ -60,15 +60,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake libeigen3-dev libopencv-dev qtbase5-dev
-          # Keep legacy test CMake from trying to download into an unwritable path.
-          sudo mkdir -p /opt
-          sudo touch /opt/XTF_Support_test_dataset.zip
 
       - name: Build unit tests
         run: bash Scripts/build_linux_unit_tests.sh
 
       - name: Run unit tests
-        run: test/build/tests
+        run: OPENSIDESCAN_REQUIRE_XTF_DATASET=0 test/build/tests
 
   build_linux:
     name: Build OpenSidescan (Linux)
@@ -114,7 +111,7 @@ jobs:
           path: |
             C:\LIBS\opencv\build
             C:\LIBS\eigen-3.4.0
-          key: windows-libs-opencv-4.5.5-eigen-3.4.0-v1
+          key: windows-libs-opencv-4.12.0-eigen-3.4.0-v1
 
       - name: Install Qt 5.15.2
         uses: jurplel/install-qt-action@v4
@@ -125,7 +122,7 @@ jobs:
           cache: "true"
           cache-key-prefix: "opensidescan-qt-5.15.2-msvc2019_64"
 
-      - name: Install OpenCV 4.5.5 and Eigen 3.4.0 (prebuilt)
+      - name: Install OpenCV 4.12.0 and Eigen 3.4.0 (prebuilt)
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -133,8 +130,8 @@ jobs:
 
           $opencvMarker = "C:\LIBS\opencv\build\OpenCVConfig.cmake"
           if (-not (Test-Path $opencvMarker)) {
-            $opencvInstaller = Join-Path $env:RUNNER_TEMP "opencv-4.5.5-vc14_vc15.exe"
-            Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.5.5/opencv-4.5.5-vc14_vc15.exe" -OutFile $opencvInstaller
+            $opencvInstaller = Join-Path $env:RUNNER_TEMP "opencv-4.12.0-windows.exe"
+            Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.12.0/opencv-4.12.0-windows.exe" -OutFile $opencvInstaller
             $opencvExtractDir = Join-Path $env:RUNNER_TEMP "opencv-extract"
             New-Item -ItemType Directory -Force -Path $opencvExtractDir | Out-Null
             Start-Process -FilePath $opencvInstaller -ArgumentList "-y", "-o$opencvExtractDir" -Wait
@@ -153,7 +150,21 @@ jobs:
           }
 
           "OpenCV_DIR=C:\LIBS\opencv\build" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "C:\LIBS\opencv\build\x64\vc15\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $opencvBinCandidates = @(
+            "C:\LIBS\opencv\build\x64\vc17\bin",
+            "C:\LIBS\opencv\build\x64\vc16\bin",
+            "C:\LIBS\opencv\build\x64\vc15\bin"
+          )
+          $opencvBin = $opencvBinCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $opencvBin) {
+            throw "Unable to locate OpenCV runtime bin folder under C:\\LIBS\\opencv\\build\\x64\\vc*\\bin"
+          }
+          $opencvBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Setup MSVC developer command prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
 
       - name: Build and run lock tests
         shell: cmd

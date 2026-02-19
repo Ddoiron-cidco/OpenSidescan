@@ -23,6 +23,10 @@ This file must be updated whenever a change is planned or completed.
 | 2026-02-19 | Done | Build | Fixed root CMake warning by setting default `PROJECT_VERSION` to `0.1.0` when not provided by CI. |
 | 2026-02-19 | Done | CI | Replaced heavy Windows `vcpkg` source builds with prebuilt OpenCV/Eigen download and merged Windows lock/unit/build into a single `windows_ci` job to avoid duplicate dependency setup. |
 | 2026-02-19 | Done | CI | Added dependency caching for Windows CI: `actions/cache` for OpenCV/Eigen under `C:\\LIBS` and Qt cache via `install-qt-action` cache mode. |
+| 2026-02-19 | Done | CI | Fixed Windows CI compatibility by switching OpenCV prebuilt package to `4.12.0`, adding MSVC environment setup (`ilammy/msvc-dev-cmd`), and auto-detecting OpenCV runtime bin folder (`vc17`/`vc16`/`vc15`). |
+| 2026-02-19 | Done | Testing | Made `XTF Support Test` robust in CI: if dataset is unavailable, test is skipped unless `OPENSIDESCAN_REQUIRE_XTF_DATASET=1` is set. |
+| 2026-02-19 | Done | Build | Removed internal dataset download attempts (`jenkins.cidco.local`) from `test/CMakeLists.txt`; dataset is now treated as optional external input. |
+| 2026-02-19 | Done | CI | Removed fake `/opt/XTF_Support_test_dataset.zip` creation in Linux CI and explicitly run tests with `OPENSIDESCAN_REQUIRE_XTF_DATASET=0`. |
 | 2026-02-19 | Planned | Build | Define a non-empty canonical project version in `CMakeLists.txt` and propagate it to packaging metadata. |
 | 2026-02-19 | Planned | CI | Replace hardcoded self-hosted runner labels with organization-standard labels after runner registration is finalized. |
 | 2026-02-19 | Planned | Testing | Remove internal dataset path assumptions (`/opt`, internal host) from Linux unit-test CMake configuration. |

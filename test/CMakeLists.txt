@@ -36,8 +36,7 @@ if(UNIX)
 	message("*nix unit-test")
 	
 	if(NOT EXISTS "/opt/XTF_Support_test_dataset.zip")
-		file(DOWNLOAD jenkins.cidco.local/XTF_Support_test_dataset.zip "/opt/XTF_Support_test_dataset.zip" SHOW_PROGRESS)
-		# file(ARCHIVE_EXTRACT INPUT "/opt/XTF_Support_test_dataset.zip" DESTINATION "/opt/" VERBOSE) require cmake >= 3.18
+		message(STATUS "Optional dataset '/opt/XTF_Support_test_dataset.zip' not found. XTF Support Test may be skipped.")
 	endif()
 	
 	find_package (Eigen3 3.3 REQUIRED NO_MODULE)
@@ -52,9 +51,7 @@ if(WIN32)
 	message("windows unit-test")
 	
 	if(NOT EXISTS "C:/XTF_Support_test_dataset.zip")
-		file(DOWNLOAD jenkins.cidco.local/XTF_Support_test_dataset.zip "C:/data/XTF_Support_test_dataset.zip" SHOW_PROGRESS)
-		message("Extracting XTF_Support_test_dataset.zip")
-		file(ARCHIVE_EXTRACT INPUT "C:/data/XTF_Support_test_dataset.zip" DESTINATION "C:/data/" VERBOSE)
+		message(STATUS "Optional dataset 'C:/XTF_Support_test_dataset.zip' not found. XTF Support Test may be skipped.")
 	endif()
 	
 	include_directories(C:/LIBS/eigen-3.4.0)
