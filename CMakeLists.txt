@@ -165,6 +165,10 @@ if(WIN32)
 	# creating targets
 	add_library(dep ${LIB_FILES} ${THIRDPARTY})
 	add_executable(${PROJECT_NAME} WIN32 ${SOURCE})
+	if(MSVC)
+		target_compile_definitions(dep PRIVATE _CRT_SECURE_NO_WARNINGS)
+		target_compile_options(dep PRIVATE /wd4996 /wd4244 /wd4267 /wd4200 /wd4305)
+	endif()
 	# linking dependencies
 	target_link_libraries(dep Qt5::Widgets Qt5::Xml Qt5::Network ${OpenCV_LIBS})
 	target_link_libraries(${PROJECT_NAME} PUBLIC dep)

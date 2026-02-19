@@ -30,6 +30,8 @@ This file must be updated whenever a change is planned or completed.
 | 2026-02-19 | Planned | Build | Define a non-empty canonical project version in `CMakeLists.txt` and propagate it to packaging metadata. |
 | 2026-02-19 | Planned | CI | Replace hardcoded self-hosted runner labels with organization-standard labels after runner registration is finalized. |
 | 2026-02-19 | Planned | Testing | Remove internal dataset path assumptions (`/opt`, internal host) from Linux unit-test CMake configuration. |
+| 2026-02-19 | Done | Build | Suppressed third-party World Magnetic Model float-truncation warnings (`C4305` / `-Wfloat-conversion`) at the integration point in `inventoryobject.cpp` via compiler-specific diagnostic push/pop around `wmm_calculations.cpp`. |
+| 2026-02-19 | Done | Build | Reduced Windows third-party warning noise by adding MSVC-targeted suppression for `dep`, `lockcath-dep`, and `unittest_dep` (`_CRT_SECURE_NO_WARNINGS`, `/wd4996 /wd4244 /wd4267 /wd4200 /wd4305`). |
 
 ## Update Rule
 When a change starts, add a `Planned` entry.
