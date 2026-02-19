@@ -32,6 +32,8 @@ This file must be updated whenever a change is planned or completed.
 | 2026-02-19 | Planned | Testing | Remove internal dataset path assumptions (`/opt`, internal host) from Linux unit-test CMake configuration. |
 | 2026-02-19 | Done | Build | Suppressed third-party World Magnetic Model float-truncation warnings (`C4305` / `-Wfloat-conversion`) at the integration point in `inventoryobject.cpp` via compiler-specific diagnostic push/pop around `wmm_calculations.cpp`. |
 | 2026-02-19 | Done | Build | Reduced Windows third-party warning noise by adding MSVC-targeted suppression for `dep`, `lockcath-dep`, and `unittest_dep` (`_CRT_SECURE_NO_WARNINGS`, `/wd4996 /wd4244 /wd4267 /wd4200 /wd4305`). |
+| 2026-02-19 | Done | Build | Suppressed remaining third-party WMM unused-local warning at integration boundary (`C4101` / `-Wunused-variable`) around `wmm_calculations.cpp` include. |
+| 2026-02-19 | Done | Testing | Reduced `win-fileLock-test` warning noise by aligning MSVC suppression on `wincatchLockTest` and avoiding Catch macro redefinition (`C4005`) with a guarded `CATCH_CONFIG_NO_POSIX_SIGNALS` define. |
 
 ## Update Rule
 When a change starts, add a `Planned` entry.

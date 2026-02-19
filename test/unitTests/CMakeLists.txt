@@ -66,7 +66,7 @@ if(WIN32)
 	add_library(unittest_dep ${LIB_FILES} ${THIRDPARTY})
 	if(MSVC)
 		target_compile_definitions(unittest_dep PRIVATE _CRT_SECURE_NO_WARNINGS)
-		target_compile_options(unittest_dep PRIVATE /wd4996 /wd4244 /wd4267 /wd4200 /wd4305)
+		target_compile_options(unittest_dep PRIVATE /wd4996 /wd4244 /wd4267 /wd4200 /wd4305 /wd4101)
 	endif()
 	# linking librairies
 	target_link_libraries(unittest_dep ${OpenCV_LIBS} Qt5::Widgets Qt5::Xml)
