@@ -97,8 +97,8 @@ jobs:
             build/bin/*
           if-no-files-found: warn
 
-  lock_test_windows:
-    name: File Lock Tests (Windows)
+  windows_ci:
+    name: Windows Build and Tests
     runs-on: windows-latest
 
     steps:
@@ -107,24 +107,53 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Restore OpenCV/Eigen cache
+        id: cache-win-libs
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\LIBS\opencv\build
+            C:\LIBS\eigen-3.4.0
+          key: windows-libs-opencv-4.5.5-eigen-3.4.0-v1
+
       - name: Install Qt 5.15.2
         uses: jurplel/install-qt-action@v4
         with:
           version: "5.15.2"
           arch: "win64_msvc2019_64"
           dir: "C:\\Qt"
+          cache: "true"
+          cache-key-prefix: "opensidescan-qt-5.15.2-msvc2019_64"
 
-      - name: Install OpenCV and Eigen (vcpkg)
+      - name: Install OpenCV 4.5.5 and Eigen 3.4.0 (prebuilt)
         shell: pwsh
         run: |
-          git clone https://github.com/microsoft/vcpkg "$env:RUNNER_TEMP\vcpkg"
-          & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat"
-          & "$env:RUNNER_TEMP\vcpkg\vcpkg.exe" install opencv4:x64-windows eigen3:x64-windows
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path "C:\LIBS" | Out-Null
 
-          New-Item -ItemType Directory -Force -Path "C:\LIBS\eigen-3.4.0" | Out-Null
-          Copy-Item -Path "$env:RUNNER_TEMP\vcpkg\installed\x64-windows\include\eigen3\Eigen" -Destination "C:\LIBS\eigen-3.4.0" -Recurse -Force
+          $opencvMarker = "C:\LIBS\opencv\build\OpenCVConfig.cmake"
+          if (-not (Test-Path $opencvMarker)) {
+            $opencvInstaller = Join-Path $env:RUNNER_TEMP "opencv-4.5.5-vc14_vc15.exe"
+            Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.5.5/opencv-4.5.5-vc14_vc15.exe" -OutFile $opencvInstaller
+            $opencvExtractDir = Join-Path $env:RUNNER_TEMP "opencv-extract"
+            New-Item -ItemType Directory -Force -Path $opencvExtractDir | Out-Null
+            Start-Process -FilePath $opencvInstaller -ArgumentList "-y", "-o$opencvExtractDir" -Wait
+            New-Item -ItemType Directory -Force -Path "C:\LIBS\opencv" | Out-Null
+            Copy-Item -Path "$opencvExtractDir\opencv\build" -Destination "C:\LIBS\opencv\build" -Recurse -Force
+          }
 
-          "OpenCV_DIR=$env:RUNNER_TEMP\vcpkg\installed\x64-windows\share\opencv4" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $eigenMarker = "C:\LIBS\eigen-3.4.0\Eigen\Core"
+          if (-not (Test-Path $eigenMarker)) {
+            $eigenZip = Join-Path $env:RUNNER_TEMP "eigen-3.4.0.zip"
+            Invoke-WebRequest -Uri "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip" -OutFile $eigenZip
+            $eigenExtractDir = Join-Path $env:RUNNER_TEMP "eigen-extract"
+            Expand-Archive -Path $eigenZip -DestinationPath $eigenExtractDir -Force
+            New-Item -ItemType Directory -Force -Path "C:\LIBS\eigen-3.4.0" | Out-Null
+            Copy-Item -Path "$eigenExtractDir\eigen-3.4.0\*" -Destination "C:\LIBS\eigen-3.4.0" -Recurse -Force
+          }
+
+          "OpenCV_DIR=C:\LIBS\opencv\build" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "C:\LIBS\opencv\build\x64\vc15\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build and run lock tests
         shell: cmd
@@ -139,35 +168,6 @@ jobs:
           path: build/reports/winlock-test-report.xml
           if-no-files-found: error
 
-  unit_tests_windows:
-    name: Unit Tests (Windows)
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install Qt 5.15.2
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: "5.15.2"
-          arch: "win64_msvc2019_64"
-          dir: "C:\\Qt"
-
-      - name: Install OpenCV and Eigen (vcpkg)
-        shell: pwsh
-        run: |
-          git clone https://github.com/microsoft/vcpkg "$env:RUNNER_TEMP\vcpkg"
-          & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat"
-          & "$env:RUNNER_TEMP\vcpkg\vcpkg.exe" install opencv4:x64-windows eigen3:x64-windows
-
-          New-Item -ItemType Directory -Force -Path "C:\LIBS\eigen-3.4.0" | Out-Null
-          Copy-Item -Path "$env:RUNNER_TEMP\vcpkg\installed\x64-windows\include\eigen3\Eigen" -Destination "C:\LIBS\eigen-3.4.0" -Recurse -Force
-
-          "OpenCV_DIR=$env:RUNNER_TEMP\vcpkg\installed\x64-windows\share\opencv4" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Build and run unit tests
         shell: cmd
         run: |
@@ -180,35 +180,6 @@ jobs:
           name: windows-unit-test-report
           path: build/reports/win-unittest.xml
           if-no-files-found: error
-
-  build_windows_unsigned:
-    name: Build OpenSidescan (Windows, unsigned)
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install Qt 5.15.2
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: "5.15.2"
-          arch: "win64_msvc2019_64"
-          dir: "C:\\Qt"
-
-      - name: Install OpenCV and Eigen (vcpkg)
-        shell: pwsh
-        run: |
-          git clone https://github.com/microsoft/vcpkg "$env:RUNNER_TEMP\vcpkg"
-          & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat"
-          & "$env:RUNNER_TEMP\vcpkg\vcpkg.exe" install opencv4:x64-windows eigen3:x64-windows
-
-          New-Item -ItemType Directory -Force -Path "C:\LIBS\eigen-3.4.0" | Out-Null
-          Copy-Item -Path "$env:RUNNER_TEMP\vcpkg\installed\x64-windows\include\eigen3\Eigen" -Destination "C:\LIBS\eigen-3.4.0" -Recurse -Force
-
-          "OpenCV_DIR=$env:RUNNER_TEMP\vcpkg\installed\x64-windows\share\opencv4" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Build OpenSidescan
         shell: cmd

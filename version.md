@@ -17,6 +17,12 @@ This file must be updated whenever a change is planned or completed.
 | 2026-02-19 | Done | CI | Removed all `self-hosted` runners and moved Windows jobs to `windows-latest`. |
 | 2026-02-19 | Done | Security | Disabled in-workflow signing and added CI note to use either a cloud/HSM signing service or a dedicated signing host. |
 | 2026-02-19 | Done | CI | Added Windows dependency bootstrap in CI (`Qt 5.15.2` via `install-qt-action`, `OpenCV`/`Eigen` via `vcpkg`) and legacy Eigen path provisioning (`C:\\LIBS\\eigen-3.4.0`). |
+| 2026-02-19 | Done | Testing | Fixed Catch2 build failure on modern Linux headers by disabling POSIX signal handling in Catch test entry points (`CATCH_CONFIG_NO_POSIX_SIGNALS`). |
+| 2026-02-19 | Done | Build | Updated `test/linuxFileLockTest/CMakeLists.txt` minimum CMake version from `2.8` to `3.10` to remove CI deprecation warning. |
+| 2026-02-19 | Done | Testing | Hardened Catch2 workaround at build-system level by adding `CATCH_CONFIG_NO_POSIX_SIGNALS` compile definitions in test CMake targets. |
+| 2026-02-19 | Done | Build | Fixed root CMake warning by setting default `PROJECT_VERSION` to `0.1.0` when not provided by CI. |
+| 2026-02-19 | Done | CI | Replaced heavy Windows `vcpkg` source builds with prebuilt OpenCV/Eigen download and merged Windows lock/unit/build into a single `windows_ci` job to avoid duplicate dependency setup. |
+| 2026-02-19 | Done | CI | Added dependency caching for Windows CI: `actions/cache` for OpenCV/Eigen under `C:\\LIBS` and Qt cache via `install-qt-action` cache mode. |
 | 2026-02-19 | Planned | Build | Define a non-empty canonical project version in `CMakeLists.txt` and propagate it to packaging metadata. |
 | 2026-02-19 | Planned | CI | Replace hardcoded self-hosted runner labels with organization-standard labels after runner registration is finalized. |
 | 2026-02-19 | Planned | Testing | Remove internal dataset path assumptions (`/opt`, internal host) from Linux unit-test CMake configuration. |

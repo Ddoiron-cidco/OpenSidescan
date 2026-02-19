@@ -8,7 +8,9 @@ Date : 13 August 2021
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
-set(PROJECT_VERSION)
+if(NOT DEFINED PROJECT_VERSION OR PROJECT_VERSION STREQUAL "")
+	set(PROJECT_VERSION "0.1.0")
+endif()
 project(OpenSidescan VERSION ${PROJECT_VERSION})
 
 # specify the C++ standard

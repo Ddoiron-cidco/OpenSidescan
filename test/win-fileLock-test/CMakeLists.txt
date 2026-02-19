@@ -65,10 +65,10 @@ if(WIN32)
 	# creating targets
 	add_library(lockcath-dep ${LIB_FILES} ${THIRDPARTY})
 	add_executable(wincatchLockTest winLockCatchMain.cpp)
+	target_compile_definitions(wincatchLockTest PRIVATE CATCH_CONFIG_NO_POSIX_SIGNALS)
 	# linking dependencies
 	target_link_libraries(lockcath-dep ${OpenCV_LIBS})
 	target_link_libraries(wincatchLockTest PUBLIC lockcath-dep)
 
 	
 endif()
-

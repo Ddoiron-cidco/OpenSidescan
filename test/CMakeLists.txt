@@ -66,6 +66,7 @@ if(WIN32)
 endif()
 
 set_target_properties(tests PROPERTIES LINKER_LANGUAGE CXX)
+target_compile_definitions(tests PRIVATE CATCH_CONFIG_NO_POSIX_SIGNALS)
 
 # add_test(name target param)
 add_test("test0" tests)
