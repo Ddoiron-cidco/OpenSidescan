@@ -1,0 +1,249 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  APP_VERSION: 0.1.${{ github.run_number }}
+
+permissions:
+  contents: read
+
+jobs:
+  lock_test_linux:
+    name: File Lock Tests (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libeigen3-dev libopencv-dev
+
+      - name: Build lock tests
+        run: bash Scripts/build_lock_test.sh
+
+      - name: Run lock tests
+        run: |
+          mkdir -p build/reports
+          test/linuxFileLockTest/build/lockTests -r junit -o build/reports/lock-test-report.xml || true
+          sleep 20
+          bash Scripts/cutReport.sh
+
+      - name: Upload Linux lock test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-lock-test-report
+          path: |
+            build/reports/lock-test-report.xml
+            build/reports/cut-report.xml
+          if-no-files-found: error
+
+  unit_tests_linux:
+    name: Unit Tests (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libeigen3-dev libopencv-dev qtbase5-dev
+          # Keep legacy test CMake from trying to download into an unwritable path.
+          sudo mkdir -p /opt
+          sudo touch /opt/XTF_Support_test_dataset.zip
+
+      - name: Build unit tests
+        run: bash Scripts/build_linux_unit_tests.sh
+
+      - name: Run unit tests
+        run: test/build/tests
+
+  build_linux:
+    name: Build OpenSidescan (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libeigen3-dev libopencv-dev qtbase5-dev
+
+      - name: Build OpenSidescan
+        run: bash Scripts/build_opensidescan.sh "$APP_VERSION"
+
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-opensidescan-binary
+          path: |
+            build/OpenSidescan
+            build/bin/*
+          if-no-files-found: warn
+
+  lock_test_windows:
+    name: File Lock Tests (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "5.15.2"
+          arch: "win64_msvc2019_64"
+          dir: "C:\\Qt"
+
+      - name: Install OpenCV and Eigen (vcpkg)
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg "$env:RUNNER_TEMP\vcpkg"
+          & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat"
+          & "$env:RUNNER_TEMP\vcpkg\vcpkg.exe" install opencv4:x64-windows eigen3:x64-windows
+
+          New-Item -ItemType Directory -Force -Path "C:\LIBS\eigen-3.4.0" | Out-Null
+          Copy-Item -Path "$env:RUNNER_TEMP\vcpkg\installed\x64-windows\include\eigen3\Eigen" -Destination "C:\LIBS\eigen-3.4.0" -Recurse -Force
+
+          "OpenCV_DIR=$env:RUNNER_TEMP\vcpkg\installed\x64-windows\share\opencv4" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build and run lock tests
+        shell: cmd
+        run: |
+          call Scripts\winlocktest.bat
+          test\win-fileLock-test\build\Debug\wincatchLockTest.exe -r junit -o build\reports\winlock-test-report.xml
+
+      - name: Upload Windows lock test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-lock-test-report
+          path: build/reports/winlock-test-report.xml
+          if-no-files-found: error
+
+  unit_tests_windows:
+    name: Unit Tests (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "5.15.2"
+          arch: "win64_msvc2019_64"
+          dir: "C:\\Qt"
+
+      - name: Install OpenCV and Eigen (vcpkg)
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg "$env:RUNNER_TEMP\vcpkg"
+          & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat"
+          & "$env:RUNNER_TEMP\vcpkg\vcpkg.exe" install opencv4:x64-windows eigen3:x64-windows
+
+          New-Item -ItemType Directory -Force -Path "C:\LIBS\eigen-3.4.0" | Out-Null
+          Copy-Item -Path "$env:RUNNER_TEMP\vcpkg\installed\x64-windows\include\eigen3\Eigen" -Destination "C:\LIBS\eigen-3.4.0" -Recurse -Force
+
+          "OpenCV_DIR=$env:RUNNER_TEMP\vcpkg\installed\x64-windows\share\opencv4" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build and run unit tests
+        shell: cmd
+        run: |
+          call Scripts\win-unittest.bat
+          test\build\tests.exe -r junit -o build\reports\win-unittest.xml
+
+      - name: Upload Windows unit test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-unit-test-report
+          path: build/reports/win-unittest.xml
+          if-no-files-found: error
+
+  build_windows_unsigned:
+    name: Build OpenSidescan (Windows, unsigned)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "5.15.2"
+          arch: "win64_msvc2019_64"
+          dir: "C:\\Qt"
+
+      - name: Install OpenCV and Eigen (vcpkg)
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg "$env:RUNNER_TEMP\vcpkg"
+          & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat"
+          & "$env:RUNNER_TEMP\vcpkg\vcpkg.exe" install opencv4:x64-windows eigen3:x64-windows
+
+          New-Item -ItemType Directory -Force -Path "C:\LIBS\eigen-3.4.0" | Out-Null
+          Copy-Item -Path "$env:RUNNER_TEMP\vcpkg\installed\x64-windows\include\eigen3\Eigen" -Destination "C:\LIBS\eigen-3.4.0" -Recurse -Force
+
+          "OpenCV_DIR=$env:RUNNER_TEMP\vcpkg\installed\x64-windows\share\opencv4" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build OpenSidescan
+        shell: cmd
+        run: call Scripts\build_opensidescan_win.bat %APP_VERSION%
+
+      - name: Build unsigned installer
+        shell: cmd
+        run: call Scripts\build_installer.bat %APP_VERSION%
+
+      - name: Upload Windows build tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-tree
+          path: |
+            build\Release\**
+            build\RelWithDebInfo\**
+            build\Debug\**
+          if-no-files-found: error
+
+      - name: Upload unsigned Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-unsigned-installer
+          path: build\**\OpenSidescan-*-win64.exe
+          if-no-files-found: warn
+
+  # NOTE: Signing is intentionally disabled in this workflow.
+  # Recommended options for production signing:
+  # 1) Use a cloud/HSM signing service integrated in CI.
+  # 2) Use a dedicated self-hosted signing runner with USB token access.
+  signing_note:
+    name: Signing Note
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display signing strategy note
+        run: |
+          echo "Signing is disabled in CI."
+          echo "Use a cloud/HSM signing service or a dedicated signing host."
