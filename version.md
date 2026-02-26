@@ -45,6 +45,7 @@ This file must be updated whenever a change is planned or completed.
 | 2026-02-19 | Done | CI | Added explicit Windows CI NSIS bootstrap step in `.github/workflows/ci.yml` (`choco install nsis`, `makensis` PATH export, and version check). |
 | 2026-02-19 | Done | Build | Hardened `Scripts/build_installer.bat` with idempotent build directory creation and explicit CMake/CPack error propagation using `pushd/popd` and `exit /b`. |
 | 2026-02-19 | Done | CI | Hardened NSIS bootstrap path resolution in `.github/workflows/ci.yml` to find `makensis.exe` in Chocolatey and NSIS `Bin` layouts (`C:\\ProgramData\\chocolatey\\bin`, `Program Files*\\NSIS\\Bin`). |
+| 2026-02-26 | Done | CI | Fixed Windows NSIS bootstrap on GitHub Actions by resolving `ProgramFilesX86`/`ProgramFiles` via PowerShell APIs (avoiding `$env:ProgramFiles(x86)` interpolation issues) and adding a recursive `makensis.exe` fallback search under NSIS/Chocolatey locations. |
 
 ## Update Rule
 When a change starts, add a `Planned` entry.

@@ -205,16 +205,26 @@ jobs:
             choco install nsis -y --no-progress
           }
 
+          $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
+          $programFiles = [Environment]::GetFolderPath("ProgramFiles")
           $nsisExeCandidates = @(
-            "$env:ProgramFiles(x86)\NSIS\makensis.exe",
-            "$env:ProgramFiles(x86)\NSIS\Bin\makensis.exe",
-            "$env:ProgramFiles\NSIS\makensis.exe",
-            "$env:ProgramFiles\NSIS\Bin\makensis.exe",
+            (Join-Path $programFilesX86 "NSIS\makensis.exe"),
+            (Join-Path $programFilesX86 "NSIS\Bin\makensis.exe"),
+            (Join-Path $programFiles "NSIS\makensis.exe"),
+            (Join-Path $programFiles "NSIS\Bin\makensis.exe"),
             "C:\ProgramData\chocolatey\bin\makensis.exe"
           )
+          if (-not ($nsisExeCandidates | Where-Object { Test-Path $_ })) {
+            $nsisExeCandidates += Get-ChildItem -Path @(
+              (Join-Path $programFilesX86 "NSIS"),
+              (Join-Path $programFiles "NSIS"),
+              "C:\ProgramData\chocolatey\lib"
+            ) -Filter "makensis.exe" -File -Recurse -ErrorAction SilentlyContinue |
+              Select-Object -ExpandProperty FullName
+          }
           $nsisExe = $nsisExeCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $nsisExe) {
-            throw "makensis.exe not found after NSIS install"
+            throw "makensis.exe not found after NSIS install. Checked standard paths and recursive search under NSIS/chocolatey locations."
           }
           $nsisDir = Split-Path -Path $nsisExe -Parent
           $nsisDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
