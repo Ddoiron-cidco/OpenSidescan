@@ -155,9 +155,9 @@ if(UNIX)
 	install(TARGETS sidescan-dump DESTINATION /usr/local/bin/)
 	
 endif()
-if(WIN32)
-	message("windows cmake")
-	set(OPENCV_ROOT "C:/LIBS/opencv/build")
+	if(WIN32)
+		message("windows cmake")
+		set(OPENCV_ROOT "C:/LIBS/opencv/build")
 	set(_opencv_runtime "")
 	foreach(_rt vc17 vc16 vc15 vc14)
 		if(EXISTS "${OPENCV_ROOT}/x64/${_rt}/lib")
@@ -168,12 +168,27 @@ if(WIN32)
 	if(_opencv_runtime STREQUAL "")
 		message(FATAL_ERROR "Unable to find OpenCV libraries under ${OPENCV_ROOT}/x64/(vc17|vc16|vc15|vc14)/lib")
 	endif()
-	# Older OpenCVConfig.cmake files may not detect newer MSVC toolsets automatically.
-	set(OpenCV_RUNTIME "${_opencv_runtime}" CACHE STRING "OpenCV runtime" FORCE)
-	include_directories(C:/LIBS/eigen-3.4.0)
-	find_package(OpenCV 4.5 REQUIRED PATHS "${OPENCV_ROOT}")
-	find_package(Qt5 5.15 COMPONENTS Widgets Network REQUIRED PATHS C:/Qt/5.15.2/msvc2019_64/lib/cmake/Qt5)
-	find_package(Qt5Xml REQUIRED PATHS C:/Qt/5.15.2/msvc2019_64/lib)
+		# Older OpenCVConfig.cmake files may not detect newer MSVC toolsets automatically.
+		set(OpenCV_RUNTIME "${_opencv_runtime}" CACHE STRING "OpenCV runtime" FORCE)
+		include_directories(C:/LIBS/eigen-3.4.0)
+		find_package(OpenCV 4.5 REQUIRED PATHS "${OPENCV_ROOT}")
+		set(_qt_prefix_hint "")
+		foreach(_qt_root_candidate
+			"C:/Qt/5.15.2/win64_msvc2019_64"
+			"C:/Qt/5.15.2/msvc2019_64"
+		)
+			if(EXISTS "${_qt_root_candidate}/lib/cmake/Qt5")
+				set(_qt_prefix_hint "${_qt_root_candidate}")
+				break()
+			endif()
+		endforeach()
+		if(_qt_prefix_hint)
+			find_package(Qt5 5.15 COMPONENTS Widgets Network REQUIRED PATHS "${_qt_prefix_hint}")
+			find_package(Qt5Xml REQUIRED PATHS "${_qt_prefix_hint}")
+		else()
+			find_package(Qt5 5.15 COMPONENTS Widgets Network REQUIRED)
+			find_package(Qt5Xml REQUIRED)
+		endif()
 	
 	# creating targets
 	add_library(dep ${LIB_FILES} ${THIRDPARTY})
@@ -187,19 +202,42 @@ if(WIN32)
 	target_link_libraries(${PROJECT_NAME} PUBLIC dep)
 
 	set(_opencv_bin_dir "${OPENCV_ROOT}/x64/${OpenCV_RUNTIME}/bin")
-	file(GLOB CV_DLLS "${_opencv_bin_dir}/opencv_world*.dll")
-	if(NOT CV_DLLS)
-		message(FATAL_ERROR "Unable to find OpenCV runtime DLLs in ${_opencv_bin_dir}")
-	endif()
-	set(QT_DLLS_PATH C:/Qt/5.15.2/msvc2019_64/bin)
-	set(QT_DLLS ${QT_DLLS_PATH}/QT5Widgets.dll
-				${QT_DLLS_PATH}/QT5Core.dll
-				${QT_DLLS_PATH}/QT5Gui.dll
-				${QT_DLLS_PATH}/Qt5Network.dll
-	)
-	install(FILES ${QT_DLLS} ${CV_DLLS} DESTINATION bin)
-	install(FILES C:/Qt/5.15.2/msvc2019_64/plugins/platforms/qwindows.dll DESTINATION bin/platforms)
-	install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/models/${CRABTRAP_MODEL_VERSION}" DESTINATION models)
+		file(GLOB CV_DLLS "${_opencv_bin_dir}/opencv_world*.dll")
+		if(NOT CV_DLLS)
+			message(FATAL_ERROR "Unable to find OpenCV runtime DLLs in ${_opencv_bin_dir}")
+		endif()
+		get_filename_component(_qt_install_prefix "${Qt5_DIR}/../../.." ABSOLUTE)
+		set(QT_DLLS_PATH "${_qt_install_prefix}/bin")
+		set(_qt_platforms_dir "${_qt_install_prefix}/plugins/platforms")
+		function(_append_imported_runtime_dll out_list target_name)
+			set(_dll "")
+			foreach(_cfg_prop
+				IMPORTED_LOCATION_RELEASE
+				IMPORTED_LOCATION_RELWITHDEBINFO
+				IMPORTED_LOCATION_MINSIZEREL
+				IMPORTED_LOCATION_DEBUG
+				IMPORTED_LOCATION
+			)
+				get_target_property(_candidate "${target_name}" ${_cfg_prop})
+				if(_candidate AND EXISTS "${_candidate}")
+					set(_dll "${_candidate}")
+					break()
+				endif()
+			endforeach()
+			if(NOT _dll)
+				message(FATAL_ERROR "Unable to resolve runtime DLL for ${target_name}")
+			endif()
+			set(${out_list} "${${out_list}};${_dll}" PARENT_SCOPE)
+		endfunction()
+		set(QT_DLLS "")
+		_append_imported_runtime_dll(QT_DLLS Qt5::Widgets)
+		_append_imported_runtime_dll(QT_DLLS Qt5::Core)
+		_append_imported_runtime_dll(QT_DLLS Qt5::Gui)
+		_append_imported_runtime_dll(QT_DLLS Qt5::Network)
+		_append_imported_runtime_dll(QT_DLLS Qt5::Xml)
+		install(FILES ${QT_DLLS} ${CV_DLLS} DESTINATION bin)
+		install(FILES "${_qt_platforms_dir}/qwindows.dll" DESTINATION bin/platforms)
+		install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/models/${CRABTRAP_MODEL_VERSION}" DESTINATION models)
 	install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/thirdParty/MBES-lib/src/thirdParty/WorldMagneticModel/WMM2020_Linux/src/WMM.COF" DESTINATION src/thirdParty/MBES-lib/src/thirdParty/WorldMagneticModel/WMM2020_Linux/src/)
 	set(CPACK_NSIS_DISPLAY_NAME ${PROJECT_NAME})# add project to program and features in control panel
 	set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\${PROJECT_NAME}.exe")
